@@ -37,6 +37,24 @@ Import behavior:
 
 Use **Rensa lista** to remove the current WatchLog data from the app before importing a cleaned source file. Clearing removes the saved title list from `localStorage`, sets the count to `0`, and keeps the app empty on reload instead of restoring demo data.
 
+## Manual Management
+
+Use the floating `+` button to add titles directly in the app. Cards can be tapped/clicked to edit the same fields:
+
+- title
+- type
+- season
+- rating
+- comment
+- status
+- recommended by
+
+Titles are grouped into collapsible sections: `Sett`, `Tips`, and `Vill se`. Each section keeps its own manual order and never sorts alphabetically. New manual entries are placed at the top of their selected section, and changing a title's status moves it to the top of the new section.
+
+Each saved title uses the future-proof model:
+
+`id`, `title`, `type`, `season`, `rating`, `status`, `recommendedBy`, `comment`, `imdbUrl`, `createdAt`, `updatedAt`, `manualOrder`.
+
 ## Rating Helpers
 
 Implemented in `script.js`:

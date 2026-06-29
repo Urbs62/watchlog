@@ -9,7 +9,7 @@
     <link rel="manifest" href="icons/manifest.webmanifest">
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="icons/icon.svg">
-    <link rel="stylesheet" href="styles.css?v=5">
+    <link rel="stylesheet" href="styles.css?v=6">
   </head>
   <body>
     <main class="app-shell" aria-labelledby="app-title">
@@ -47,11 +47,88 @@
       </section>
 
       <section>
-        <ul id="watch-list" class="watch-list" aria-label="Sparade titlar"></ul>
+        <div id="sections" class="sections" aria-label="Sparade titlar"></div>
         <p id="empty-state" class="empty-state" hidden>Inga titlar matchar filtret.</p>
       </section>
     </main>
 
-    <script src="script.js?v=5"></script>
+    <button id="add-button" class="add-button" type="button" aria-label="L&#228;gg till titel">+</button>
+
+    <div id="title-modal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <form id="title-form" class="modal-panel" aria-labelledby="modal-title">
+        <div class="modal-header">
+          <h2 id="modal-title">L&#228;gg till titel</h2>
+          <button class="icon-button" type="button" data-close-modal aria-label="Stang">×</button>
+        </div>
+
+        <label class="field">
+          <span>Title *</span>
+          <input id="title-field" name="title" type="text" required autocomplete="off">
+        </label>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Type</span>
+            <select id="type-field" name="type">
+              <option>Serie</option>
+              <option>Film</option>
+              <option>Miniserie</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Season</span>
+            <input id="season-field" name="season" type="text" autocomplete="off">
+          </label>
+        </div>
+
+        <div class="field-grid">
+          <label class="field">
+            <span>Rating</span>
+            <select id="rating-field" name="rating">
+              <option value="">None</option>
+              <option value="1">1</option>
+              <option value="1.5">1+</option>
+              <option value="2">2</option>
+              <option value="2.5">2+</option>
+              <option value="3">3</option>
+              <option value="3.5">3+</option>
+              <option value="4">4</option>
+              <option value="4.5">4+</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Status</span>
+            <select id="status-field" name="status">
+              <option>Sett</option>
+              <option>Tips</option>
+              <option>Vill se</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Comment</span>
+          <textarea id="comment-field" name="comment" rows="3"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Recommended by</span>
+          <input id="recommended-field" name="recommendedBy" type="text" autocomplete="off">
+        </label>
+
+        <div class="modal-actions">
+          <button id="delete-button" class="delete-button" type="button" hidden>Delete title</button>
+          <span></span>
+          <button class="secondary-button" type="button" data-close-modal>Cancel</button>
+          <button class="save-button" type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="script.js?v=6"></script>
   </body>
 </html>
