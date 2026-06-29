@@ -263,6 +263,10 @@ textarea:focus {
   padding: 10px;
 }
 
+.watch-list[hidden] {
+  display: none;
+}
+
 .watch-list > li {
   width: 100%;
   flex: 0 0 auto;

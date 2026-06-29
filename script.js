@@ -601,6 +601,12 @@ function renderSection(status, visibleTitles) {
   `;
 }
 
+function toggleSection(status) {
+  state.collapsed[status] = !state.collapsed[status];
+  saveCollapsedState();
+  renderList();
+}
+
 function renderCard(item) {
   const meta = [item.type, item.season].filter(Boolean).join(" \u2022 ");
   const rating = item.rating === null || item.rating === undefined ? null : Number(item.rating);
@@ -761,10 +767,7 @@ sectionsEl.addEventListener("click", (event) => {
 
   const toggle = event.target.closest("[data-section-toggle]");
   if (toggle) {
-    const status = toggle.dataset.sectionToggle;
-    state.collapsed[status] = !state.collapsed[status];
-    saveCollapsedState();
-    renderList();
+    toggleSection(toggle.dataset.sectionToggle);
     return;
   }
 
