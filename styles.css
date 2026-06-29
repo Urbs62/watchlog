@@ -185,6 +185,7 @@ h1 {
 .watch-list {
   display: flex;
   flex-direction: column;
+  flex-wrap: nowrap;
   gap: 10px;
   width: min(100%, 720px);
   list-style: none;
@@ -192,10 +193,14 @@ h1 {
   padding: 0;
 }
 
+.watch-list > li {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
 .watch-card {
   position: relative;
-  display: grid;
-  grid-template-columns: 7px 1fr;
+  display: block;
   min-height: 126px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -205,12 +210,15 @@ h1 {
 }
 
 .rating-strip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 7px;
   background: var(--strip-color, var(--dim));
 }
 
 .card-content {
   min-width: 0;
-  padding: 14px 14px 13px;
+  padding: 14px 14px 13px 21px;
 }
 
 .stars {
