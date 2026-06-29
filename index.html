@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101113">
+    <meta name="description" content="WatchLog - samla och betygsatt tv-serier, filmer och miniserier.">
+    <title>WatchLog</title>
+    <link rel="manifest" href="icons/manifest.webmanifest">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell" aria-labelledby="app-title">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Seriearkiv</p>
+          <h1 id="app-title">WatchLog</h1>
+        </div>
+        <p class="title-count" aria-live="polite">
+          <span id="total-count">0</span>
+          <span>titlar</span>
+        </p>
+      </header>
+
+      <section class="controls" aria-label="Filter och sök">
+        <div class="filter-row" role="group" aria-label="Filtrera efter typ">
+          <button class="filter-button is-active" type="button" data-filter="Alla">Alla</button>
+          <button class="filter-button" type="button" data-filter="Serie">Serier</button>
+          <button class="filter-button" type="button" data-filter="Film">Filmer</button>
+          <button class="filter-button" type="button" data-filter="Miniserie">Miniserier</button>
+        </div>
+
+        <label class="search-wrap">
+          <span class="sr-only">Sök titel</span>
+          <input id="search-input" type="search" placeholder="Sök titel, år eller typ" autocomplete="off">
+        </label>
+      </section>
+
+      <section>
+        <ul id="watch-list" class="watch-list" aria-label="Sparade titlar"></ul>
+        <p id="empty-state" class="empty-state" hidden>Inga titlar matchar filtret.</p>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

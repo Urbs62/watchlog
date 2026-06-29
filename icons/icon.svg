@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WatchLog icon">
+  <rect width="512" height="512" rx="96" fill="#101113"/>
+  <rect x="92" y="122" width="328" height="226" rx="34" fill="#20232a" stroke="#f3c84b" stroke-width="18"/>
+  <path d="M178 390h156" stroke="#c9cbd1" stroke-width="26" stroke-linecap="round"/>
+  <path d="M216 348v42M296 348v42" stroke="#c9cbd1" stroke-width="24" stroke-linecap="round"/>
+  <path d="m256 176 22 46 51 7-37 36 9 51-45-24-45 24 9-51-37-36 51-7z" fill="#f3c84b"/>
+</svg>

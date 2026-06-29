@@ -1,0 +1,16 @@
+{
+  "name": "WatchLog",
+  "short_name": "WatchLog",
+  "start_url": "../index.html",
+  "display": "standalone",
+  "background_color": "#101113",
+  "theme_color": "#101113",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
