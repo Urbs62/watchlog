@@ -33,6 +33,14 @@ input {
   font: inherit;
 }
 
+input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 button {
   cursor: pointer;
 }
@@ -103,6 +111,26 @@ h1 {
   padding: 10px 0 14px;
   background: linear-gradient(180deg, rgba(16, 17, 19, 0.98), rgba(16, 17, 19, 0.88));
   backdrop-filter: blur(18px);
+}
+
+.import-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(243, 200, 75, 0.38);
+  border-radius: var(--radius);
+  background: rgba(243, 200, 75, 0.12);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.import-button:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .filter-row {
@@ -204,6 +232,13 @@ h1 {
   margin: 0;
   color: var(--muted);
   font-size: 0.91rem;
+  line-height: 1.35;
+}
+
+.notes {
+  margin: 7px 0 0;
+  color: #d1c7ae;
+  font-size: 0.87rem;
   line-height: 1.35;
 }
 

@@ -15,6 +15,21 @@ WatchLog preserves personal watch-history order. The first row in imported sourc
 
 Titles are never sorted alphabetically unless explicitly requested. Each item stores an `order` field so the list order survives saves and reloads. The `addTitle(titleData)` helper inserts new manual entries at the top by assigning an order before the current first item.
 
+## Text Import
+
+Use **Importera textfil** to replace the current list with a plain text file containing one watched title per row.
+
+Import behavior:
+
+- Empty lines are skipped.
+- Row order is preserved exactly.
+- Imported rows default to type `Serie`.
+- The first detected rating token splits the row into title, rating, and notes.
+- Text before the rating becomes the title.
+- Text after the rating becomes notes.
+- Rows without ratings are imported with `rating: null`.
+- Imported data is saved to `localStorage` and replaces the sample list.
+
 ## Rating Helpers
 
 Implemented in `script.js`:
@@ -37,6 +52,9 @@ Supported source rating shorthand:
 | `****-` | 3.5 |
 | `****` | 4.0 |
 | `****+` | 4.5 |
+| `*****-` | 4.5 |
 | `*****` | 5.0 |
+| `4-` | 3.5 |
+| `4+` | 4.5 |
 
 Open `index.html` directly in a browser, or serve the folder with any static file server.
