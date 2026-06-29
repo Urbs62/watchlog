@@ -98,46 +98,33 @@ function importTextFile(text) {
   renderList();
 }
 
-// Splits one source row into title, rating, and notes. The first valid rating
-// token wins; text before it is title, text after it is notes.
+// Splits one source row into title, season/detail, rating, and notes. The first
+// valid rating token wins; text before it is title-ish, text after it is notes.
 function parseImportLine(line) {
   const ratingMatch = findRatingMatch(line);
-
-  if (!ratingMatch) {
-    const titleParts = parseTitleDetail(line.trim());
-
-    return {
-      title: titleParts.title,
-      type: "Serie",
-      detail: titleParts.detail,
-      rating: null,
-      notes: "",
-    };
-  }
-
-  const titleParts = parseTitleDetail(line.slice(0, ratingMatch.index).trim());
+  const titleSource = ratingMatch ? line.slice(0, ratingMatch.index).trim() : line.trim();
+  const notesSource = ratingMatch ? line.slice(ratingMatch.index + ratingMatch.text.length).trim() : "";
+  const titleParts = parseTitleParts(titleSource, notesSource);
 
   return {
     title: titleParts.title,
     type: "Serie",
     detail: titleParts.detail,
-    rating: ratingMatch.value,
-    notes: line.slice(ratingMatch.index + ratingMatch.text.length).trim(),
+    rating: ratingMatch ? ratingMatch.value : null,
+    notes: titleParts.notes,
   };
 }
 
 function findRatingMatch(line) {
-  const ratingPattern = /(^|\s)(\*{1,5}[+-]?|[1-5][+-]?)(?=\s|$)/g;
-  let match = ratingPattern.exec(line);
+  const candidates = findRatingCandidates(line);
 
-  while (match) {
-    const token = match[2];
-    const tokenIndex = match.index + match[1].length;
+  for (const candidate of candidates) {
+    const token = candidate.text;
+    const tokenIndex = candidate.index;
     const value = parseRating(token);
 
     if (value !== null) {
       if (isLikelyTrailingSeasonNumber(line, token, tokenIndex) || isLikelySeasonBeforeLaterRating(line, token, tokenIndex)) {
-        match = ratingPattern.exec(line);
         continue;
       }
 
@@ -147,19 +134,60 @@ function findRatingMatch(line) {
         index: tokenIndex,
       };
     }
-
-    match = ratingPattern.exec(line);
   }
 
   return null;
+}
+
+function findRatingCandidates(line) {
+  const candidates = [];
+  const tokenPattern = /(^|[^A-Za-zÅÄÖåäö0-9*])(\*{1,5}[+-]?|[1-5][+-]?)(?=$|[^A-Za-zÅÄÖåäö0-9*])/g;
+  const starPattern = /\*{1,5}[+-]?/g;
+  const signedNumberPattern = /(^|[^A-Za-zÅÄÖåäö0-9])([1-5][+-])/g;
+  let match = tokenPattern.exec(line);
+
+  while (match) {
+    candidates.push({
+      text: match[2],
+      index: match.index + match[1].length,
+    });
+    match = tokenPattern.exec(line);
+  }
+
+  match = starPattern.exec(line);
+
+  while (match) {
+    candidates.push({
+      text: match[0],
+      index: match.index,
+    });
+    match = starPattern.exec(line);
+  }
+
+  match = signedNumberPattern.exec(line);
+
+  while (match) {
+    candidates.push({
+      text: match[2],
+      index: match.index + match[1].length,
+    });
+    match = signedNumberPattern.exec(line);
+  }
+
+  return candidates
+    .sort((a, b) => a.index - b.index || b.text.length - a.text.length)
+    .filter((candidate, index, list) => {
+      return !list.slice(0, index).some((item) => item.index === candidate.index && item.text === candidate.text);
+    });
 }
 
 function isLikelyTrailingSeasonNumber(line, token, tokenIndex) {
   const isPlainNumber = /^[1-9]\d*$/.test(token);
   const isAtEnd = line.slice(tokenIndex + token.length).trim() === "";
   const hasTitleBefore = line.slice(0, tokenIndex).trim().length > 0;
+  const hasParentheticalNoteBefore = /\([^)]*\)/.test(line.slice(0, tokenIndex));
 
-  return isPlainNumber && isAtEnd && hasTitleBefore && !isLikelyYear(token);
+  return isPlainNumber && isAtEnd && hasTitleBefore && !hasParentheticalNoteBefore && !isLikelyYear(token);
 }
 
 function isLikelySeasonBeforeLaterRating(line, token, tokenIndex) {
@@ -174,8 +202,29 @@ function isLikelySeasonBeforeLaterRating(line, token, tokenIndex) {
   return parsedTitle.detail !== "" && /(^|\s)(\*{1,5}[+-]?|[1-5][+-]?)(?=\s|$)/.test(remainingText);
 }
 
+function parseTitleParts(rawTitle, rawNotes = "") {
+  const parentheticalNotes = [];
+  const titleWithoutParentheses = rawTitle.replace(/\(([^)]*)\)/g, (match, note) => {
+    const cleanedNote = note.trim();
+
+    if (cleanedNote) {
+      parentheticalNotes.push(cleanedNote);
+    }
+
+    return " ";
+  });
+  const titleParts = parseTitleDetail(titleWithoutParentheses);
+  const notes = formatNotes([...parentheticalNotes, rawNotes]);
+
+  return {
+    title: titleParts.title,
+    detail: titleParts.detail,
+    notes,
+  };
+}
+
 function parseTitleDetail(rawTitle) {
-  const title = rawTitle.trim();
+  const title = rawTitle.trim().replace(/\s+/g, " ");
   const seasonMatch =
     title.match(/\s+(?:s|season|s\u00e4song)\s*([1-9]\d*)$/i) ||
     title.match(/\s+([1-9]\d*)$/);
@@ -194,6 +243,26 @@ function parseTitleDetail(rawTitle) {
     title: title.slice(0, seasonMatch.index).trim(),
     detail: `S\u00e4song ${seasonNumber}`,
   };
+}
+
+function formatNotes(notes) {
+  return notes
+    .map((note) => note.trim())
+    .filter(Boolean)
+    .map(formatNoteSentence)
+    .join(" ");
+}
+
+function formatNoteSentence(note) {
+  const trimmed = note.trim().replace(/^\((.*)\)$/, "$1").trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  const capitalized = trimmed.charAt(0).toLocaleUpperCase("sv-SE") + trimmed.slice(1);
+
+  return /[.!?]$/.test(capitalized) ? capitalized : `${capitalized}.`;
 }
 
 function isLikelyYear(value) {
@@ -218,6 +287,7 @@ function parseRating(ratingText) {
     "*****-": 4.5,
     "*****": 5,
     "1": 1,
+    "1-": 0.5,
     "1+": 1.5,
     "2-": 1.5,
     "2": 2,
@@ -230,23 +300,24 @@ function parseRating(ratingText) {
     "4+": 4.5,
     "5-": 4.5,
     "5": 5,
+    "5+": 5,
   };
 
   return ratingMap[normalized] ?? null;
 }
 
-// Renders full, half, and empty stars while keeping a fixed five-position scale.
+// Renders whole stars only. Half ratings keep their numeric value internally
+// and display as the previous full star plus one empty star.
 function renderStars(value) {
   if (value === null || value === undefined || value === "") {
-    return "\u2606\u2606\u2606\u2606\u2606";
+    return "";
   }
 
   const rating = Math.max(0, Math.min(5, Number(value) || 0));
   const fullStars = Math.floor(rating);
   const hasHalf = rating % 1 >= 0.5;
-  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
 
-  return `${"\u2605".repeat(fullStars)}${hasHalf ? "\u00bd" : ""}${"\u2606".repeat(emptyStars)}`;
+  return `${"\u2605".repeat(fullStars)}${hasHalf ? "\u2606" : ""}`;
 }
 
 function buildInfoLink(title) {

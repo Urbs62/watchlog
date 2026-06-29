@@ -29,6 +29,7 @@ Import behavior:
 - The first detected rating token splits the row into title, rating, and notes.
 - Text before the rating becomes the title.
 - Text after the rating becomes notes.
+- Parenthetical text before the rating is moved into notes.
 - Trailing season markers such as `2`, `S2`, `Season 2`, and `Säsong 2` are moved into the detail field as `Säsong 2`.
 - Four-digit years such as `2002` are not treated as seasons.
 - Rows without ratings are imported with `rating: null`.
@@ -58,7 +59,22 @@ Supported source rating shorthand:
 | `****+` | 4.5 |
 | `*****-` | 4.5 |
 | `*****` | 5.0 |
+| `1-` | 0.5 |
+| `1` | 1.0 |
+| `1+` | 1.5 |
+| `2-` | 1.5 |
+| `2` | 2.0 |
+| `2+` | 2.5 |
+| `3-` | 2.5 |
+| `3` | 3.0 |
+| `3+` | 3.5 |
 | `4-` | 3.5 |
+| `4` | 4.0 |
 | `4+` | 4.5 |
+| `5-` | 4.5 |
+| `5` | 5.0 |
+| `5+` | 5.0 |
+
+Half ratings are stored numerically but rendered with only filled and empty stars, for example `3.5` renders as `★★★☆`.
 
 Open `index.html` directly in a browser, or serve the folder with any static file server.
