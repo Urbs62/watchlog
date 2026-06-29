@@ -15,6 +15,8 @@ WatchLog preserves personal watch-history order. The first row in imported sourc
 
 Titles are never sorted alphabetically unless explicitly requested. Each item stores an `order` field so the list order survives saves and reloads. The `addTitle(titleData)` helper inserts new manual entries at the top by assigning an order before the current first item.
 
+The watch list is always rendered as one vertical column on every screen size so reverse chronological order is visually unambiguous.
+
 ## Text Import
 
 Use **Importera textfil** to replace the current list with a plain text file containing one watched title per row.
@@ -27,6 +29,8 @@ Import behavior:
 - The first detected rating token splits the row into title, rating, and notes.
 - Text before the rating becomes the title.
 - Text after the rating becomes notes.
+- Trailing season markers such as `2`, `S2`, `Season 2`, and `Säsong 2` are moved into the detail field as `Säsong 2`.
+- Four-digit years such as `2002` are not treated as seasons.
 - Rows without ratings are imported with `rating: null`.
 - Imported data is saved to `localStorage` and replaces the sample list.
 

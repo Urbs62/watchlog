@@ -104,19 +104,23 @@ function parseImportLine(line) {
   const ratingMatch = findRatingMatch(line);
 
   if (!ratingMatch) {
+    const titleParts = parseTitleDetail(line.trim());
+
     return {
-      title: line.trim(),
+      title: titleParts.title,
       type: "Serie",
-      detail: "",
+      detail: titleParts.detail,
       rating: null,
       notes: "",
     };
   }
 
+  const titleParts = parseTitleDetail(line.slice(0, ratingMatch.index).trim());
+
   return {
-    title: line.slice(0, ratingMatch.index).trim(),
+    title: titleParts.title,
     type: "Serie",
-    detail: "",
+    detail: titleParts.detail,
     rating: ratingMatch.value,
     notes: line.slice(ratingMatch.index + ratingMatch.text.length).trim(),
   };
@@ -127,13 +131,20 @@ function findRatingMatch(line) {
   let match = ratingPattern.exec(line);
 
   while (match) {
-    const value = parseRating(match[2]);
+    const token = match[2];
+    const tokenIndex = match.index + match[1].length;
+    const value = parseRating(token);
 
     if (value !== null) {
+      if (isLikelyTrailingSeasonNumber(line, token, tokenIndex) || isLikelySeasonBeforeLaterRating(line, token, tokenIndex)) {
+        match = ratingPattern.exec(line);
+        continue;
+      }
+
       return {
-        text: match[2],
+        text: token,
         value,
-        index: match.index + match[1].length,
+        index: tokenIndex,
       };
     }
 
@@ -141,6 +152,53 @@ function findRatingMatch(line) {
   }
 
   return null;
+}
+
+function isLikelyTrailingSeasonNumber(line, token, tokenIndex) {
+  const isPlainNumber = /^[1-9]\d*$/.test(token);
+  const isAtEnd = line.slice(tokenIndex + token.length).trim() === "";
+  const hasTitleBefore = line.slice(0, tokenIndex).trim().length > 0;
+
+  return isPlainNumber && isAtEnd && hasTitleBefore && !isLikelyYear(token);
+}
+
+function isLikelySeasonBeforeLaterRating(line, token, tokenIndex) {
+  if (!/^[1-9]\d*$/.test(token) || isLikelyYear(token)) {
+    return false;
+  }
+
+  const possibleTitle = line.slice(0, tokenIndex + token.length).trim();
+  const remainingText = line.slice(tokenIndex + token.length);
+  const parsedTitle = parseTitleDetail(possibleTitle);
+
+  return parsedTitle.detail !== "" && /(^|\s)(\*{1,5}[+-]?|[1-5][+-]?)(?=\s|$)/.test(remainingText);
+}
+
+function parseTitleDetail(rawTitle) {
+  const title = rawTitle.trim();
+  const seasonMatch =
+    title.match(/\s+(?:s|season|s\u00e4song)\s*([1-9]\d*)$/i) ||
+    title.match(/\s+([1-9]\d*)$/);
+
+  if (!seasonMatch) {
+    return { title, detail: "" };
+  }
+
+  const seasonNumber = seasonMatch[1];
+
+  if (isLikelyYear(seasonNumber)) {
+    return { title, detail: "" };
+  }
+
+  return {
+    title: title.slice(0, seasonMatch.index).trim(),
+    detail: `S\u00e4song ${seasonNumber}`,
+  };
+}
+
+function isLikelyYear(value) {
+  const year = Number(value);
+  return /^\d{4}$/.test(String(value)) && year >= 1900 && year <= 2099;
 }
 
 // Converts source shorthand such as "**+", "***-", or "4-" into a numeric rating.
