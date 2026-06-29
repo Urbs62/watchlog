@@ -117,12 +117,13 @@ h1 {
 
 .import-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 10px;
 }
 
 .import-button,
+.export-button,
 .clear-button {
   display: flex;
   align-items: center;
@@ -137,6 +138,13 @@ h1 {
   cursor: pointer;
 }
 
+.secondary-import,
+.export-button {
+  border-color: rgba(201, 203, 209, 0.25);
+  background: rgba(255, 255, 255, 0.045);
+  color: #dcd7ca;
+}
+
 .clear-button {
   border-color: rgba(226, 93, 93, 0.4);
   background: rgba(226, 93, 93, 0.11);
@@ -145,6 +153,7 @@ h1 {
 }
 
 .import-button:focus-within,
+.export-button:focus-visible,
 .clear-button:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;

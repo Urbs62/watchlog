@@ -1,5 +1,7 @@
 const STORAGE_KEY = "watchlog.titles.v1";
 const MODE_KEY = "watchlog.mode.v1";
+const COLLAPSED_KEY = "watchlog.collapsed.v1";
+const BACKUP_APP_NAME = "WatchLog";
 const MODE_DEMO = "demo";
 const MODE_IMPORTED = "imported";
 const MODE_CLEARED = "cleared";
@@ -20,11 +22,7 @@ const state = {
   filter: "Alla",
   query: "",
   editingId: null,
-  collapsed: {
-    [STATUS_SEEN]: false,
-    [STATUS_TIPS]: true,
-    [STATUS_WATCHLIST]: true,
-  },
+  collapsed: loadCollapsedState(),
   ...loadInitialState(),
 };
 
@@ -33,6 +31,8 @@ const emptyEl = document.querySelector("#empty-state");
 const totalCountEl = document.querySelector("#total-count");
 const searchInput = document.querySelector("#search-input");
 const fileInput = document.querySelector("#file-input");
+const jsonInput = document.querySelector("#json-input");
+const exportButton = document.querySelector("#export-button");
 const clearButton = document.querySelector("#clear-button");
 const addButton = document.querySelector("#add-button");
 const modalEl = document.querySelector("#title-modal");
@@ -76,6 +76,136 @@ function loadInitialState() {
 function saveTitles(titles, mode = MODE_IMPORTED) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(titles));
   localStorage.setItem(MODE_KEY, mode);
+}
+
+function loadCollapsedState() {
+  const defaults = {
+    [STATUS_SEEN]: false,
+    [STATUS_TIPS]: true,
+    [STATUS_WATCHLIST]: true,
+  };
+  const saved = localStorage.getItem(COLLAPSED_KEY);
+
+  if (!saved) return defaults;
+
+  try {
+    const parsed = JSON.parse(saved);
+    return {
+      [STATUS_SEEN]: Boolean(parsed[STATUS_SEEN]),
+      [STATUS_TIPS]: Boolean(parsed[STATUS_TIPS]),
+      [STATUS_WATCHLIST]: Boolean(parsed[STATUS_WATCHLIST]),
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+function saveCollapsedState() {
+  localStorage.setItem(COLLAPSED_KEY, JSON.stringify(state.collapsed));
+}
+
+function createBackupPayload() {
+  return {
+    app: BACKUP_APP_NAME,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    sections: {
+      [STATUS_SEEN]: getTitlesForStatus(STATUS_SEEN, state.titles).map(toBackupTitle),
+      [STATUS_TIPS]: getTitlesForStatus(STATUS_TIPS, state.titles).map(toBackupTitle),
+      [STATUS_WATCHLIST]: getTitlesForStatus(STATUS_WATCHLIST, state.titles).map(toBackupTitle),
+    },
+    titles: state.titles.map(toBackupTitle),
+  };
+}
+
+function toBackupTitle(item) {
+  return {
+    id: item.id,
+    title: item.title,
+    type: item.type,
+    season: item.season,
+    rating: item.rating,
+    status: item.status,
+    recommendedBy: item.recommendedBy,
+    comment: item.comment,
+    imdbUrl: item.imdbUrl,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    manualOrder: item.manualOrder,
+  };
+}
+
+function exportJsonBackup() {
+  const payload = createBackupPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `WatchLog-${formatBackupTimestamp(new Date())}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function formatBackupTimestamp(date) {
+  const pad = (value) => String(value).padStart(2, "0");
+
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join("-") + `-${pad(date.getHours())}-${pad(date.getMinutes())}`;
+}
+
+function importJsonBackup(text) {
+  let parsed;
+
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    window.alert("Kunde inte läsa JSON-filen.");
+    return;
+  }
+
+  const titles = extractBackupTitles(parsed);
+
+  if (!titles) {
+    window.alert("Filen verkar inte vara en WatchLog-backup.");
+    return;
+  }
+
+  const confirmed = window.confirm("Importera backup och ersätta nuvarande lista?");
+  if (!confirmed) return;
+
+  state.titles = titles.map(normalizeTitleRecord);
+  state.mode = MODE_IMPORTED;
+  resetControls();
+  saveTitles(state.titles);
+  renderList();
+}
+
+function extractBackupTitles(data) {
+  if (!data || data.app !== BACKUP_APP_NAME) return null;
+
+  if (Array.isArray(data.titles)) {
+    return data.titles.every(hasBackupTitleShape) ? data.titles : null;
+  }
+
+  if (data.sections && typeof data.sections === "object") {
+    const titles = STATUSES.flatMap((status) => {
+      return Array.isArray(data.sections[status]) ? data.sections[status] : [];
+    });
+
+    return titles.every(hasBackupTitleShape) ? titles : null;
+  }
+
+  return null;
+}
+
+function hasBackupTitleShape(item) {
+  return item && typeof item === "object" && typeof item.title === "string";
 }
 
 function createTitleRecord(data, manualOrder = 0, id = createId()) {
@@ -462,7 +592,7 @@ function renderSection(status, visibleTitles) {
     <section class="section-block">
       <button class="section-toggle" type="button" data-section-toggle="${escapeHtml(status)}" aria-expanded="${!isCollapsed}" aria-controls="${listId}">
         <span>${escapeHtml(status)} (${total})</span>
-        <span>${isCollapsed ? "\u25be" : "\u25b4"}</span>
+        <span aria-hidden="true">${isCollapsed ? "\u25b8" : "\u25be"}</span>
       </button>
       <ul id="${listId}" class="watch-list" ${isCollapsed ? "hidden" : ""}>
         ${titles.map(renderCard).join("")}
@@ -585,6 +715,17 @@ fileInput.addEventListener("change", (event) => {
   event.target.value = "";
 });
 
+jsonInput.addEventListener("change", (event) => {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => importJsonBackup(String(reader.result || "")));
+  reader.readAsText(file);
+  event.target.value = "";
+});
+
+exportButton.addEventListener("click", exportJsonBackup);
 clearButton.addEventListener("click", clearWatchList);
 addButton.addEventListener("click", openCreateModal);
 deleteButton.addEventListener("click", () => {
@@ -622,6 +763,7 @@ sectionsEl.addEventListener("click", (event) => {
   if (toggle) {
     const status = toggle.dataset.sectionToggle;
     state.collapsed[status] = !state.collapsed[status];
+    saveCollapsedState();
     renderList();
     return;
   }

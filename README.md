@@ -51,9 +51,17 @@ Use the floating `+` button to add titles directly in the app. Cards can be tapp
 
 Titles are grouped into collapsible sections: `Sett`, `Tips`, and `Vill se`. Each section keeps its own manual order and never sorts alphabetically. New manual entries are placed at the top of their selected section, and changing a title's status moves it to the top of the new section.
 
+Collapsed section state is saved in `localStorage`, so `Sett`, `Tips`, and `Vill se` keep their expanded/collapsed state across reloads.
+
 Each saved title uses the future-proof model:
 
 `id`, `title`, `type`, `season`, `rating`, `status`, `recommendedBy`, `comment`, `imdbUrl`, `createdAt`, `updatedAt`, `manualOrder`.
+
+## JSON Backup
+
+Use **Exportera JSON** to download a full WatchLog backup named `WatchLog-YYYY-MM-DD-HH-mm.json`. The backup includes all sections and every title field in the current data model.
+
+Use **Importera JSON** to restore a WatchLog backup on this or another device. JSON restore asks for confirmation, replaces the current local list, saves to `localStorage`, and does not restore demo data afterward.
 
 ## Rating Helpers
 
