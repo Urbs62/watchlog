@@ -1,4 +1,8 @@
 const STORAGE_KEY = "watchlog.titles.v1";
+const MODE_KEY = "watchlog.mode.v1";
+const MODE_DEMO = "demo";
+const MODE_IMPORTED = "imported";
+const MODE_CLEARED = "cleared";
 
 const sampleTitles = [
   { title: "The Wire", type: "Serie", detail: "2002\u20132008", rating: 5, notes: "", order: 0 },
@@ -11,7 +15,7 @@ const sampleTitles = [
 const state = {
   filter: "Alla",
   query: "",
-  titles: loadTitles(),
+  ...loadInitialState(),
 };
 
 const listEl = document.querySelector("#watch-list");
@@ -19,28 +23,35 @@ const emptyEl = document.querySelector("#empty-state");
 const totalCountEl = document.querySelector("#total-count");
 const searchInput = document.querySelector("#search-input");
 const fileInput = document.querySelector("#file-input");
+const clearButton = document.querySelector("#clear-button");
 const filterButtons = document.querySelectorAll(".filter-button");
 
-function loadTitles() {
+function loadInitialState() {
   const saved = localStorage.getItem(STORAGE_KEY);
+  const mode = localStorage.getItem(MODE_KEY);
 
   if (!saved) {
-    return sampleTitles;
+    if (mode === MODE_IMPORTED || mode === MODE_CLEARED) {
+      return { titles: [], mode: MODE_CLEARED };
+    }
+
+    return { titles: sampleTitles, mode: MODE_DEMO };
   }
 
   try {
     const parsed = JSON.parse(saved);
-    const titles = Array.isArray(parsed) ? parsed : sampleTitles;
+    const titles = Array.isArray(parsed) ? parsed : [];
     const normalized = normalizeOrder(titles);
-    saveTitles(normalized);
-    return normalized;
+    saveTitles(normalized, MODE_IMPORTED);
+    return { titles: normalized, mode: MODE_IMPORTED };
   } catch {
-    return sampleTitles;
+    return { titles: [], mode: MODE_CLEARED };
   }
 }
 
-function saveTitles(titles) {
+function saveTitles(titles, mode = MODE_IMPORTED) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(titles));
+  localStorage.setItem(MODE_KEY, mode);
 }
 
 // Preserves imported/insertion order. Missing legacy order values are assigned
@@ -69,6 +80,7 @@ function addTitle(titleData) {
   };
 
   state.titles = [title, ...state.titles];
+  state.mode = MODE_IMPORTED;
   saveTitles(state.titles);
   renderList();
 }
@@ -81,11 +93,8 @@ function importTextFile(text) {
     .map(parseImportLine)
     .map((item, index) => ({ ...item, order: index }));
 
-  if (importedTitles.length === 0) {
-    return;
-  }
-
   state.titles = importedTitles;
+  state.mode = MODE_IMPORTED;
   state.filter = "Alla";
   state.query = "";
   searchInput.value = "";
@@ -95,6 +104,28 @@ function importTextFile(text) {
   });
 
   saveTitles(state.titles);
+  renderList();
+}
+
+function clearWatchList() {
+  const confirmed = window.confirm("Vill du rensa hela listan? Detta tar bort alla importerade titlar fr\u00e5n appen.");
+
+  if (!confirmed) {
+    return;
+  }
+
+  state.titles = [];
+  state.mode = MODE_CLEARED;
+  state.filter = "Alla";
+  state.query = "";
+  searchInput.value = "";
+
+  filterButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.filter === "Alla");
+  });
+
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.setItem(MODE_KEY, MODE_CLEARED);
   renderList();
 }
 
@@ -345,6 +376,10 @@ function renderList() {
   const visibleTitles = getVisibleTitles();
   totalCountEl.textContent = state.titles.length;
   emptyEl.hidden = visibleTitles.length > 0;
+  emptyEl.textContent =
+    state.titles.length === 0
+      ? "Listan \u00e4r tom. Importera en textfil f\u00f6r att b\u00f6rja."
+      : "Inga titlar matchar filtret.";
 
   listEl.innerHTML = visibleTitles.map(renderCard).join("");
 }
@@ -412,5 +447,7 @@ fileInput.addEventListener("change", (event) => {
   reader.readAsText(file);
   event.target.value = "";
 });
+
+clearButton.addEventListener("click", clearWatchList);
 
 renderList();

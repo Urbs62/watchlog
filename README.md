@@ -35,6 +35,8 @@ Import behavior:
 - Rows without ratings are imported with `rating: null`.
 - Imported data is saved to `localStorage` and replaces the sample list.
 
+Use **Rensa lista** to remove the current WatchLog data from the app before importing a cleaned source file. Clearing removes the saved title list from `localStorage`, sets the count to `0`, and keeps the app empty on reload instead of restoring demo data.
+
 ## Rating Helpers
 
 Implemented in `script.js`:

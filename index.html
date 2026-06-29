@@ -9,7 +9,7 @@
     <link rel="manifest" href="icons/manifest.webmanifest">
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="icons/icon.svg">
-    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="styles.css?v=5">
   </head>
   <body>
     <main class="app-shell" aria-labelledby="app-title">
@@ -25,10 +25,13 @@
       </header>
 
       <section class="controls" aria-label="Filter och s&#246;k">
-        <label class="import-button">
-          <input id="file-input" type="file" accept=".txt,text/plain">
-          <span>Importera textfil</span>
-        </label>
+        <div class="import-actions">
+          <label class="import-button">
+            <input id="file-input" type="file" accept=".txt,text/plain">
+            <span>Importera textfil</span>
+          </label>
+          <button id="clear-button" class="clear-button" type="button">Rensa lista</button>
+        </div>
 
         <div class="filter-row" role="group" aria-label="Filtrera efter typ">
           <button class="filter-button is-active" type="button" data-filter="Alla">Alla</button>
@@ -49,6 +52,6 @@
       </section>
     </main>
 
-    <script src="script.js?v=4"></script>
+    <script src="script.js?v=5"></script>
   </body>
 </html>
