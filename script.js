@@ -12,6 +12,7 @@ const STATUSES = [STATUS_SEEN, STATUS_TIPS, STATUS_WATCHLIST];
 const SECTION_FILTER = "Filter";
 const SECTION_IMPORT_EXPORT = "Import / Export";
 const SECTION_KEYS = [SECTION_FILTER, SECTION_IMPORT_EXPORT, ...STATUSES];
+const startupWarnings = [];
 
 const sampleTitles = [
   createTitleRecord({ title: "The Wire", type: "Serie", season: "2002\u20132008", rating: 5, status: STATUS_SEEN }, 0, "demo-1"),
@@ -30,10 +31,12 @@ const state = {
   ...loadInitialState(),
 };
 
-const sectionsEl = document.querySelector("#sections");
-const statusSectionsEl = document.querySelector("#status-sections");
+let sectionsEl = document.querySelector("#sections");
+let controlSectionsEl = document.querySelector("#control-sections");
+let statusSectionsEl = document.querySelector("#status-sections");
 const emptyEl = document.querySelector("#empty-state");
 const totalCountEl = document.querySelector("#total-count");
+let appWarningEl = document.querySelector("#app-warning");
 const addButton = document.querySelector("#add-button");
 const modalEl = document.querySelector("#title-modal");
 const formEl = document.querySelector("#title-form");
@@ -53,11 +56,9 @@ const fields = {
   customInfoUrl: document.querySelector("#custom-info-url-field"),
 };
 
-const controlSectionsEl = document.querySelector("#control-sections");
-
 function loadInitialState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const mode = localStorage.getItem(MODE_KEY);
+  const saved = readStorageItem(STORAGE_KEY);
+  const mode = readStorageItem(MODE_KEY);
 
   if (!saved) {
     if (mode === MODE_IMPORTED || mode === MODE_CLEARED) {
@@ -69,17 +70,23 @@ function loadInitialState() {
 
   try {
     const parsed = JSON.parse(saved);
-    const titles = Array.isArray(parsed) ? parsed.map(normalizeTitleRecord) : [];
+    if (!Array.isArray(parsed)) {
+      startupWarnings.push("Sparad WatchLog-data har fel format. Appen forts\u00e4tter med en tom lista.");
+      return { titles: [], mode: MODE_CLEARED };
+    }
+
+    const titles = parsed.map(normalizeTitleRecord);
     saveTitles(titles, MODE_IMPORTED);
     return { titles, mode: MODE_IMPORTED };
   } catch {
+    startupWarnings.push("Sparad WatchLog-data kunde inte l\u00e4sas. Appen forts\u00e4tter med en tom lista.");
     return { titles: [], mode: MODE_CLEARED };
   }
 }
 
 function saveTitles(titles, mode = MODE_IMPORTED) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(titles));
-  localStorage.setItem(MODE_KEY, mode);
+  writeStorageItem(STORAGE_KEY, JSON.stringify(titles));
+  writeStorageItem(MODE_KEY, mode);
 }
 
 function loadCollapsedState() {
@@ -90,7 +97,7 @@ function loadCollapsedState() {
     [STATUS_TIPS]: true,
     [STATUS_WATCHLIST]: true,
   };
-  const saved = localStorage.getItem(COLLAPSED_KEY);
+  const saved = readStorageItem(COLLAPSED_KEY);
 
   if (!saved) return defaults;
 
@@ -103,12 +110,38 @@ function loadCollapsedState() {
       return collapsed;
     }, {});
   } catch {
+    startupWarnings.push("Sparat sektionsl\u00e4ge kunde inte l\u00e4sas. Standardl\u00e4ge anv\u00e4nds.");
     return defaults;
   }
 }
 
 function saveCollapsedState() {
-  localStorage.setItem(COLLAPSED_KEY, JSON.stringify(state.collapsed));
+  writeStorageItem(COLLAPSED_KEY, JSON.stringify(state.collapsed));
+}
+
+function readStorageItem(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    startupWarnings.push("LocalStorage kunde inte l\u00e4sas. Appen forts\u00e4tter utan sparad data.");
+    return null;
+  }
+}
+
+function writeStorageItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    startupWarnings.push("LocalStorage kunde inte uppdateras. Dina \u00e4ndringar kanske inte sparas.");
+  }
+}
+
+function removeStorageItem(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    startupWarnings.push("LocalStorage kunde inte uppdateras. Dina \u00e4ndringar kanske inte sparas.");
+  }
 }
 
 function createBackupPayload() {
@@ -285,8 +318,8 @@ function clearWatchList() {
   state.titles = [];
   state.mode = MODE_CLEARED;
   resetControls();
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.setItem(MODE_KEY, MODE_CLEARED);
+  removeStorageItem(STORAGE_KEY);
+  writeStorageItem(MODE_KEY, MODE_CLEARED);
   renderList();
 }
 
@@ -619,27 +652,81 @@ function getTitlesForStatus(status, titles = getVisibleTitles()) {
     .sort((a, b) => Number(a.manualOrder) - Number(b.manualOrder));
 }
 
+function ensureSectionRoots() {
+  if (!sectionsEl) {
+    const host = document.querySelector(".app-shell") || document.body;
+    sectionsEl = document.createElement("div");
+    sectionsEl.id = "sections";
+    sectionsEl.className = "sections";
+    sectionsEl.setAttribute("aria-label", "Sektioner");
+    host.appendChild(sectionsEl);
+  }
+
+  controlSectionsEl = sectionsEl.querySelector("#control-sections");
+  if (!controlSectionsEl) {
+    controlSectionsEl = document.createElement("div");
+    controlSectionsEl.id = "control-sections";
+    controlSectionsEl.className = "control-sections";
+    sectionsEl.prepend(controlSectionsEl);
+  }
+
+  statusSectionsEl = sectionsEl.querySelector("#status-sections");
+  if (!statusSectionsEl) {
+    statusSectionsEl = document.createElement("div");
+    statusSectionsEl.id = "status-sections";
+    statusSectionsEl.className = "status-sections";
+    sectionsEl.appendChild(statusSectionsEl);
+  }
+}
+
+function showStartupWarnings() {
+  if (startupWarnings.length === 0) return;
+
+  if (!appWarningEl) {
+    appWarningEl = document.createElement("p");
+    appWarningEl.id = "app-warning";
+    appWarningEl.className = "app-warning";
+    appWarningEl.setAttribute("role", "alert");
+    const header = document.querySelector(".app-header");
+    if (header) {
+      header.insertAdjacentElement("afterend", appWarningEl);
+    } else {
+      document.body.prepend(appWarningEl);
+    }
+  }
+
+  appWarningEl.textContent = [...new Set(startupWarnings)].join(" ");
+  appWarningEl.hidden = false;
+}
+
 function renderList() {
+  ensureSectionRoots();
   const visibleTitles = getVisibleTitles();
-  totalCountEl.textContent = state.titles.length;
-  emptyEl.hidden = visibleTitles.length > 0;
-  emptyEl.textContent =
+  if (totalCountEl) totalCountEl.textContent = state.titles.length;
+  if (emptyEl) {
+    emptyEl.hidden = visibleTitles.length > 0;
+    emptyEl.textContent =
     state.titles.length === 0
       ? "Listan \u00e4r tom. Importera en textfil f\u00f6r att b\u00f6rja."
       : "Inga titlar matchar filtret.";
+  }
 
   controlSectionsEl.innerHTML = renderControlSections();
   statusSectionsEl.innerHTML = STATUSES.map((status) => renderSection(status, visibleTitles)).join("");
   syncCollapsedSections();
+  showStartupWarnings();
 }
 
 function renderStatusSections() {
+  ensureSectionRoots();
   const visibleTitles = getVisibleTitles();
-  emptyEl.hidden = visibleTitles.length > 0;
-  emptyEl.textContent =
-    state.titles.length === 0
-      ? "Listan \u00e4r tom. Importera en textfil f\u00f6r att b\u00f6rja."
-      : "Inga titlar matchar filtret.";
+  if (emptyEl) {
+    emptyEl.hidden = visibleTitles.length > 0;
+    emptyEl.textContent =
+      state.titles.length === 0
+        ? "Listan \u00e4r tom. Importera en textfil f\u00f6r att b\u00f6rja."
+        : "Inga titlar matchar filtret.";
+  }
   statusSectionsEl.innerHTML = STATUSES.map((status) => renderSection(status, visibleTitles)).join("");
   syncCollapsedSections();
 }
@@ -837,12 +924,14 @@ function escapeHtml(value) {
   });
 }
 
-addButton.addEventListener("click", openCreateModal);
-deleteButton.addEventListener("click", () => {
+ensureSectionRoots();
+
+if (addButton) addButton.addEventListener("click", openCreateModal);
+if (deleteButton) deleteButton.addEventListener("click", () => {
   if (state.editingId) deleteTitle(state.editingId);
 });
 
-formEl.addEventListener("submit", (event) => {
+if (formEl) formEl.addEventListener("submit", (event) => {
   event.preventDefault();
   const data = getFormData();
   if (!data.title) return;
@@ -862,13 +951,13 @@ formEl.addEventListener("submit", (event) => {
   closeModal();
 });
 
-modalEl.addEventListener("click", (event) => {
+if (modalEl) modalEl.addEventListener("click", (event) => {
   if (event.target.closest("[data-close-modal]")) {
     closeModal();
   }
 });
 
-sectionsEl.addEventListener("click", (event) => {
+if (sectionsEl) sectionsEl.addEventListener("click", (event) => {
   const link = event.target.closest("a");
   if (link) {
     event.stopPropagation();
@@ -911,14 +1000,14 @@ sectionsEl.addEventListener("click", (event) => {
   }
 });
 
-sectionsEl.addEventListener("input", (event) => {
+if (sectionsEl) sectionsEl.addEventListener("input", (event) => {
   if (event.target.matches("#search-input")) {
     state.query = event.target.value;
     renderStatusSections();
   }
 });
 
-sectionsEl.addEventListener("change", (event) => {
+if (sectionsEl) sectionsEl.addEventListener("change", (event) => {
   if (!event.target.matches("#file-input, #json-input")) return;
 
   const [file] = event.target.files;
@@ -932,7 +1021,7 @@ sectionsEl.addEventListener("change", (event) => {
   event.target.value = "";
 });
 
-sectionsEl.addEventListener("keydown", (event) => {
+if (sectionsEl) sectionsEl.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") return;
 
   const card = event.target.closest("[data-card-id]");
@@ -943,7 +1032,7 @@ sectionsEl.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !modalEl.hidden) {
+  if (event.key === "Escape" && modalEl && !modalEl.hidden) {
     closeModal();
   }
 });
