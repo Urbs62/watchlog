@@ -104,6 +104,6 @@ Supported source rating shorthand:
 | `5` | 5.0 |
 | `5+` | 5.0 |
 
-Half ratings are stored numerically but rendered with only filled and empty gold stars.
+Half ratings are stored numerically but rendered compactly with only filled and empty gold stars, for example `3.5` renders as `★★★☆`.
 
 Open `index.html` directly in a browser, or serve the folder with any static file server.

@@ -560,20 +560,10 @@ function renderStars(value) {
   const rating = Math.max(0, Math.min(5, Number(value) || 0));
   const fullStars = Math.floor(rating);
   const hasHalf = rating % 1 >= 0.5;
-  const stars = [];
+  const filledStars = "\u2605".repeat(fullStars);
+  const emptyStar = hasHalf ? "\u2606" : "";
 
-  for (let index = 1; index <= 5; index += 1) {
-    const isFilled = index <= fullStars;
-    const isHalfStep = hasHalf && index === fullStars + 1;
-    const className = isFilled ? "star is-filled" : "star is-empty";
-    stars.push(`<span class="${className}" aria-hidden="true">${isFilled ? "\u2605" : "\u2606"}</span>`);
-
-    if (isHalfStep) {
-      stars[stars.length - 1] = `<span class="star is-empty is-half-step" aria-hidden="true">\u2606</span>`;
-    }
-  }
-
-  return stars.join("");
+  return `${filledStars}${emptyStar}`;
 }
 
 function buildInfoLink(title) {
@@ -602,7 +592,10 @@ function matchesRatingGroup(item) {
   if (state.ratingFilter === "Alla") return true;
   if (item.rating === null || item.rating === undefined || item.rating === "") return false;
 
-  const ratingGroup = Math.floor(Number(item.rating));
+  const rating = Number(item.rating);
+  if (!Number.isFinite(rating)) return false;
+
+  const ratingGroup = rating === 5 ? 5 : Math.floor(rating);
   return ratingGroup === Number(state.ratingFilter);
 }
 

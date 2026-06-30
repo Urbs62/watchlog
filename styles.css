@@ -166,7 +166,7 @@ h1 {
 }
 
 .rating-filter-row {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   margin-top: 7px;
 }
 
@@ -306,25 +306,11 @@ textarea:focus {
 }
 
 .stars {
-  display: inline-flex;
-  gap: 1px;
   color: var(--gold);
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1;
-}
-
-.star {
-  color: var(--gold);
-}
-
-.star.is-filled {
-  color: var(--gold);
-}
-
-.star.is-empty {
-  color: var(--gold);
 }
 
 .title {
