@@ -34,18 +34,13 @@ const sectionsEl = document.querySelector("#sections");
 const statusSectionsEl = document.querySelector("#status-sections");
 const emptyEl = document.querySelector("#empty-state");
 const totalCountEl = document.querySelector("#total-count");
-const searchInput = document.querySelector("#search-input");
-const fileInput = document.querySelector("#file-input");
-const jsonInput = document.querySelector("#json-input");
-const exportButton = document.querySelector("#export-button");
-const clearButton = document.querySelector("#clear-button");
 const addButton = document.querySelector("#add-button");
 const modalEl = document.querySelector("#title-modal");
 const formEl = document.querySelector("#title-form");
 const modalTitleEl = document.querySelector("#modal-title");
 const deleteButton = document.querySelector("#delete-button");
-const typeFilterButtons = document.querySelectorAll("[data-filter]");
-const ratingFilterButtons = document.querySelectorAll("[data-rating-filter]");
+const typeFilterButtons = () => sectionsEl.querySelectorAll("[data-filter]");
+const ratingFilterButtons = () => sectionsEl.querySelectorAll("[data-rating-filter]");
 
 const fields = {
   title: document.querySelector("#title-field"),
@@ -57,6 +52,8 @@ const fields = {
   recommendedBy: document.querySelector("#recommended-field"),
   customInfoUrl: document.querySelector("#custom-info-url-field"),
 };
+
+const controlSectionsEl = document.querySelector("#control-sections");
 
 function loadInitialState() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -297,13 +294,14 @@ function resetControls() {
   state.filter = "Alla";
   state.ratingFilter = "Alla";
   state.query = "";
-  searchInput.value = "";
+  const searchInput = sectionsEl.querySelector("#search-input");
+  if (searchInput) searchInput.value = "";
 
-  typeFilterButtons.forEach((button) => {
+  typeFilterButtons().forEach((button) => {
     button.classList.toggle("is-active", button.dataset.filter === "Alla");
   });
 
-  ratingFilterButtons.forEach((button) => {
+  ratingFilterButtons().forEach((button) => {
     button.classList.toggle("is-active", button.dataset.ratingFilter === "Alla");
   });
 }
@@ -630,8 +628,84 @@ function renderList() {
       ? "Listan \u00e4r tom. Importera en textfil f\u00f6r att b\u00f6rja."
       : "Inga titlar matchar filtret.";
 
+  controlSectionsEl.innerHTML = renderControlSections();
   statusSectionsEl.innerHTML = STATUSES.map((status) => renderSection(status, visibleTitles)).join("");
   syncCollapsedSections();
+}
+
+function renderStatusSections() {
+  const visibleTitles = getVisibleTitles();
+  emptyEl.hidden = visibleTitles.length > 0;
+  emptyEl.textContent =
+    state.titles.length === 0
+      ? "Listan \u00e4r tom. Importera en textfil f\u00f6r att b\u00f6rja."
+      : "Inga titlar matchar filtret.";
+  statusSectionsEl.innerHTML = STATUSES.map((status) => renderSection(status, visibleTitles)).join("");
+  syncCollapsedSections();
+}
+
+function renderControlSections() {
+  return `
+    <section class="section-block">
+      <button class="section-toggle" type="button" data-section-toggle="${SECTION_FILTER}" aria-expanded="${!state.collapsed[SECTION_FILTER]}" aria-controls="section-filter">
+        <span>Filter</span>
+        <span aria-hidden="true">${state.collapsed[SECTION_FILTER] ? "\u25b8" : "\u25be"}</span>
+      </button>
+      <div id="section-filter" class="section-content" ${state.collapsed[SECTION_FILTER] ? "hidden" : ""}>
+        <label class="search-wrap">
+          <span class="sr-only">S\u00f6k titel</span>
+          <input id="search-input" type="search" value="${escapeHtml(state.query)}" placeholder="S\u00f6k titel, \u00e5r eller typ" autocomplete="off">
+        </label>
+
+        <div class="filter-row" role="group" aria-label="Filtrera efter typ">
+          ${renderFilterButton("Alla", "Alla")}
+          ${renderFilterButton("Serie", "Serier")}
+          ${renderFilterButton("Film", "Filmer")}
+          ${renderFilterButton("Miniserie", "Miniserier")}
+        </div>
+
+        <div class="filter-row rating-filter-row" role="group" aria-label="Filtrera efter betyg">
+          ${renderRatingFilterButton("Alla", "Alla")}
+          ${renderRatingFilterButton("5", "5 stj\u00e4rnor")}
+          ${renderRatingFilterButton("4", "4 stj\u00e4rnor")}
+          ${renderRatingFilterButton("3", "3 stj\u00e4rnor")}
+          ${renderRatingFilterButton("2", "2 stj\u00e4rnor")}
+          ${renderRatingFilterButton("1", "1 stj\u00e4rna")}
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block">
+      <button class="section-toggle" type="button" data-section-toggle="${SECTION_IMPORT_EXPORT}" aria-expanded="${!state.collapsed[SECTION_IMPORT_EXPORT]}" aria-controls="section-import-export">
+        <span>Import / Export</span>
+        <span aria-hidden="true">${state.collapsed[SECTION_IMPORT_EXPORT] ? "\u25b8" : "\u25be"}</span>
+      </button>
+      <div id="section-import-export" class="section-content" ${state.collapsed[SECTION_IMPORT_EXPORT] ? "hidden" : ""}>
+        <div class="import-actions">
+          <label class="import-button">
+            <input id="file-input" type="file" accept=".txt,text/plain">
+            <span>Importera textlista</span>
+          </label>
+          <button id="export-button" class="export-button" type="button">Exportera JSON</button>
+          <label class="import-button secondary-import">
+            <input id="json-input" type="file" accept=".json,application/json">
+            <span>Importera JSON</span>
+          </label>
+          <button id="clear-button" class="clear-button" type="button">Rensa lista</button>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderFilterButton(value, label) {
+  const isActive = state.filter === value ? " is-active" : "";
+  return `<button class="filter-button${isActive}" type="button" data-filter="${escapeHtml(value)}">${escapeHtml(label)}</button>`;
+}
+
+function renderRatingFilterButton(value, label) {
+  const isActive = state.ratingFilter === value ? " is-active" : "";
+  return `<button class="filter-button${isActive}" type="button" data-rating-filter="${escapeHtml(value)}">${escapeHtml(label)}</button>`;
 }
 
 function renderSection(status, visibleTitles) {
@@ -763,57 +837,6 @@ function escapeHtml(value) {
   });
 }
 
-typeFilterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    state.filter = button.dataset.filter;
-
-    typeFilterButtons.forEach((item) => {
-      item.classList.toggle("is-active", item === button);
-    });
-
-    renderList();
-  });
-});
-
-ratingFilterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    state.ratingFilter = button.dataset.ratingFilter;
-
-    ratingFilterButtons.forEach((item) => {
-      item.classList.toggle("is-active", item === button);
-    });
-
-    renderList();
-  });
-});
-
-searchInput.addEventListener("input", (event) => {
-  state.query = event.target.value;
-  renderList();
-});
-
-fileInput.addEventListener("change", (event) => {
-  const [file] = event.target.files;
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.addEventListener("load", () => importTextFile(String(reader.result || "")));
-  reader.readAsText(file);
-  event.target.value = "";
-});
-
-jsonInput.addEventListener("change", (event) => {
-  const [file] = event.target.files;
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.addEventListener("load", () => importJsonBackup(String(reader.result || "")));
-  reader.readAsText(file);
-  event.target.value = "";
-});
-
-exportButton.addEventListener("click", exportJsonBackup);
-clearButton.addEventListener("click", clearWatchList);
 addButton.addEventListener("click", openCreateModal);
 deleteButton.addEventListener("click", () => {
   if (state.editingId) deleteTitle(state.editingId);
@@ -852,6 +875,30 @@ sectionsEl.addEventListener("click", (event) => {
     return;
   }
 
+  const typeFilter = event.target.closest("[data-filter]");
+  if (typeFilter) {
+    state.filter = typeFilter.dataset.filter;
+    renderList();
+    return;
+  }
+
+  const ratingFilter = event.target.closest("[data-rating-filter]");
+  if (ratingFilter) {
+    state.ratingFilter = ratingFilter.dataset.ratingFilter;
+    renderList();
+    return;
+  }
+
+  if (event.target.closest("#export-button")) {
+    exportJsonBackup();
+    return;
+  }
+
+  if (event.target.closest("#clear-button")) {
+    clearWatchList();
+    return;
+  }
+
   const toggle = event.target.closest("[data-section-toggle]");
   if (toggle) {
     toggleSection(toggle.dataset.sectionToggle);
@@ -862,6 +909,27 @@ sectionsEl.addEventListener("click", (event) => {
   if (card) {
     openEditModal(card.dataset.cardId);
   }
+});
+
+sectionsEl.addEventListener("input", (event) => {
+  if (event.target.matches("#search-input")) {
+    state.query = event.target.value;
+    renderStatusSections();
+  }
+});
+
+sectionsEl.addEventListener("change", (event) => {
+  if (!event.target.matches("#file-input, #json-input")) return;
+
+  const [file] = event.target.files;
+  if (!file) return;
+
+  const reader = new FileReader();
+  const importFile = event.target.matches("#file-input") ? importTextFile : importJsonBackup;
+
+  reader.addEventListener("load", () => importFile(String(reader.result || "")));
+  reader.readAsText(file);
+  event.target.value = "";
 });
 
 sectionsEl.addEventListener("keydown", (event) => {

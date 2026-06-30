@@ -224,6 +224,11 @@ textarea:focus {
   gap: 12px;
 }
 
+.control-sections {
+  display: grid;
+  gap: 12px;
+}
+
 .section-block {
   border: 1px solid var(--line);
   border-radius: var(--radius);
