@@ -559,12 +559,21 @@ function renderStars(value) {
 
   const rating = Math.max(0, Math.min(5, Number(value) || 0));
   const fullStars = Math.floor(rating);
-  const hasHalf = rating % 1 >= 0.5;
+  const needsEmptyStar = rating % 1 >= 0.5;
   const filledStars = "\u2605".repeat(fullStars);
-  const emptyStar = hasHalf ? "\u2606" : "";
+  const emptyStar = needsEmptyStar ? "\u2606" : "";
 
   return `${filledStars}${emptyStar}`;
 }
+
+[
+  [1, "\u2605"],
+  [1.5, "\u2605\u2606"],
+  [2.5, "\u2605\u2605\u2606"],
+  [5, "\u2605\u2605\u2605\u2605\u2605"],
+].forEach(([rating, expected]) => {
+  console.assert(renderStars(rating) === expected, `renderStars(${rating}) expected ${expected}`);
+});
 
 function buildInfoLink(title) {
   return `https://www.imdb.com/find/?q=${encodeURIComponent(title)}`;
@@ -655,7 +664,7 @@ function renderCard(item) {
       <article class="watch-card" data-card-id="${escapeHtml(item.id)}" tabindex="0" role="button" style="--strip-color: ${stripColor}">
         <div class="rating-strip" aria-hidden="true"></div>
         <div class="card-content">
-          <div class="stars" aria-label="${ratingLabel}">${renderStars(rating)}</div>
+          <div class="rating-stars" aria-label="${ratingLabel}">${renderStars(item.rating)}</div>
           <h2 class="title">${escapeHtml(item.title)}</h2>
           <p class="meta">${escapeHtml(meta || item.status)}</p>
           ${item.comment ? `<p class="notes">${escapeHtml(item.comment)}</p>` : ""}

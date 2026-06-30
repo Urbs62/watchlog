@@ -305,12 +305,12 @@ textarea:focus {
   padding: 14px 14px 13px 21px;
 }
 
-.stars {
+.rating-stars {
   color: var(--gold);
   font-size: 1rem;
-  font-weight: 800;
   letter-spacing: 0;
   line-height: 1;
+  font-weight: 800;
 }
 
 .title {
