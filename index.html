@@ -24,44 +24,60 @@
         </p>
       </header>
 
-      <section class="controls" aria-label="Filter och s&#246;k">
-        <div class="import-actions">
-          <label class="import-button">
-            <input id="file-input" type="file" accept=".txt,text/plain">
-            <span>Importera textlista</span>
-          </label>
-          <label class="import-button secondary-import">
-            <input id="json-input" type="file" accept=".json,application/json">
-            <span>Importera JSON</span>
-          </label>
-          <button id="export-button" class="export-button" type="button">Exportera JSON</button>
-          <button id="clear-button" class="clear-button" type="button">Rensa lista</button>
-        </div>
-
-        <div class="filter-row" role="group" aria-label="Filtrera efter typ">
-          <button class="filter-button is-active" type="button" data-filter="Alla">Alla</button>
-          <button class="filter-button" type="button" data-filter="Serie">Serier</button>
-          <button class="filter-button" type="button" data-filter="Film">Filmer</button>
-          <button class="filter-button" type="button" data-filter="Miniserie">Miniserier</button>
-        </div>
-
-        <div class="filter-row rating-filter-row" role="group" aria-label="Filtrera efter betyg">
-          <button class="filter-button is-active" type="button" data-rating-filter="Alla">Alla</button>
-          <button class="filter-button" type="button" data-rating-filter="5">5 stj&#228;rnor</button>
-          <button class="filter-button" type="button" data-rating-filter="4">4 stj&#228;rnor</button>
-          <button class="filter-button" type="button" data-rating-filter="3">3 stj&#228;rnor</button>
-          <button class="filter-button" type="button" data-rating-filter="2">2 stj&#228;rnor</button>
-          <button class="filter-button" type="button" data-rating-filter="1">1 stj&#228;rna</button>
-        </div>
-
-        <label class="search-wrap">
-          <span class="sr-only">S&#246;k titel</span>
-          <input id="search-input" type="search" placeholder="S&#246;k titel, &#229;r eller typ" autocomplete="off">
-        </label>
-      </section>
-
       <section>
-        <div id="sections" class="sections" aria-label="Sparade titlar"></div>
+        <div id="sections" class="sections" aria-label="Sektioner">
+          <section class="section-block">
+            <button class="section-toggle" type="button" data-section-toggle="Filter" aria-expanded="false" aria-controls="section-filter">
+              <span>Filter</span>
+              <span aria-hidden="true">&#9656;</span>
+            </button>
+            <div id="section-filter" class="section-content" hidden>
+              <div class="filter-row" role="group" aria-label="Filtrera efter typ">
+                <button class="filter-button is-active" type="button" data-filter="Alla">Alla</button>
+                <button class="filter-button" type="button" data-filter="Serie">Serier</button>
+                <button class="filter-button" type="button" data-filter="Film">Filmer</button>
+                <button class="filter-button" type="button" data-filter="Miniserie">Miniserier</button>
+              </div>
+
+              <div class="filter-row rating-filter-row" role="group" aria-label="Filtrera efter betyg">
+                <button class="filter-button is-active" type="button" data-rating-filter="Alla">Alla</button>
+                <button class="filter-button" type="button" data-rating-filter="5">5 stj&#228;rnor</button>
+                <button class="filter-button" type="button" data-rating-filter="4">4 stj&#228;rnor</button>
+                <button class="filter-button" type="button" data-rating-filter="3">3 stj&#228;rnor</button>
+                <button class="filter-button" type="button" data-rating-filter="2">2 stj&#228;rnor</button>
+                <button class="filter-button" type="button" data-rating-filter="1">1 stj&#228;rna</button>
+              </div>
+
+              <label class="search-wrap">
+                <span class="sr-only">S&#246;k titel</span>
+                <input id="search-input" type="search" placeholder="S&#246;k titel, &#229;r eller typ" autocomplete="off">
+              </label>
+            </div>
+          </section>
+
+          <section class="section-block">
+            <button class="section-toggle" type="button" data-section-toggle="Import / Export" aria-expanded="false" aria-controls="section-import-export">
+              <span>Import / Export</span>
+              <span aria-hidden="true">&#9656;</span>
+            </button>
+            <div id="section-import-export" class="section-content" hidden>
+              <div class="import-actions">
+                <label class="import-button">
+                  <input id="file-input" type="file" accept=".txt,text/plain">
+                  <span>Importera textlista</span>
+                </label>
+                <label class="import-button secondary-import">
+                  <input id="json-input" type="file" accept=".json,application/json">
+                  <span>Importera JSON</span>
+                </label>
+                <button id="export-button" class="export-button" type="button">Exportera JSON</button>
+                <button id="clear-button" class="clear-button" type="button">Rensa lista</button>
+              </div>
+            </div>
+          </section>
+
+          <div id="status-sections" class="status-sections"></div>
+        </div>
         <p id="empty-state" class="empty-state" hidden>Inga titlar matchar filtret.</p>
       </section>
     </main>

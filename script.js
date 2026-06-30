@@ -9,6 +9,9 @@ const STATUS_SEEN = "Sett";
 const STATUS_TIPS = "Tips";
 const STATUS_WATCHLIST = "Vill se";
 const STATUSES = [STATUS_SEEN, STATUS_TIPS, STATUS_WATCHLIST];
+const SECTION_FILTER = "Filter";
+const SECTION_IMPORT_EXPORT = "Import / Export";
+const SECTION_KEYS = [SECTION_FILTER, SECTION_IMPORT_EXPORT, ...STATUSES];
 
 const sampleTitles = [
   createTitleRecord({ title: "The Wire", type: "Serie", season: "2002\u20132008", rating: 5, status: STATUS_SEEN }, 0, "demo-1"),
@@ -28,6 +31,7 @@ const state = {
 };
 
 const sectionsEl = document.querySelector("#sections");
+const statusSectionsEl = document.querySelector("#status-sections");
 const emptyEl = document.querySelector("#empty-state");
 const totalCountEl = document.querySelector("#total-count");
 const searchInput = document.querySelector("#search-input");
@@ -83,6 +87,8 @@ function saveTitles(titles, mode = MODE_IMPORTED) {
 
 function loadCollapsedState() {
   const defaults = {
+    [SECTION_FILTER]: true,
+    [SECTION_IMPORT_EXPORT]: true,
     [STATUS_SEEN]: false,
     [STATUS_TIPS]: true,
     [STATUS_WATCHLIST]: true,
@@ -93,11 +99,12 @@ function loadCollapsedState() {
 
   try {
     const parsed = JSON.parse(saved);
-    return {
-      [STATUS_SEEN]: Boolean(parsed[STATUS_SEEN]),
-      [STATUS_TIPS]: Boolean(parsed[STATUS_TIPS]),
-      [STATUS_WATCHLIST]: Boolean(parsed[STATUS_WATCHLIST]),
-    };
+    if (!parsed || typeof parsed !== "object") return defaults;
+
+    return SECTION_KEYS.reduce((collapsed, section) => {
+      collapsed[section] = section in parsed ? Boolean(parsed[section]) : defaults[section];
+      return collapsed;
+    }, {});
   } catch {
     return defaults;
   }
@@ -623,7 +630,8 @@ function renderList() {
       ? "Listan \u00e4r tom. Importera en textfil f\u00f6r att b\u00f6rja."
       : "Inga titlar matchar filtret.";
 
-  sectionsEl.innerHTML = STATUSES.map((status) => renderSection(status, visibleTitles)).join("");
+  statusSectionsEl.innerHTML = STATUSES.map((status) => renderSection(status, visibleTitles)).join("");
+  syncCollapsedSections();
 }
 
 function renderSection(status, visibleTitles) {
@@ -649,6 +657,19 @@ function toggleSection(status) {
   state.collapsed[status] = !state.collapsed[status];
   saveCollapsedState();
   renderList();
+}
+
+function syncCollapsedSections() {
+  sectionsEl.querySelectorAll("[data-section-toggle]").forEach((toggle) => {
+    const section = toggle.dataset.sectionToggle;
+    const isCollapsed = Boolean(state.collapsed[section]);
+    const content = document.querySelector(`#${toggle.getAttribute("aria-controls")}`);
+    const chevron = toggle.querySelector("[aria-hidden='true']");
+
+    toggle.setAttribute("aria-expanded", String(!isCollapsed));
+    if (content) content.hidden = isCollapsed;
+    if (chevron) chevron.textContent = isCollapsed ? "\u25b8" : "\u25be";
+  });
 }
 
 function renderCard(item) {

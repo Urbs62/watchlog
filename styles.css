@@ -106,20 +106,10 @@ h1 {
   font-size: 0.76rem;
 }
 
-.controls {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  padding: 10px 0 14px;
-  background: linear-gradient(180deg, rgba(16, 17, 19, 0.98), rgba(16, 17, 19, 0.88));
-  backdrop-filter: blur(18px);
-}
-
 .import-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 10px;
 }
 
 .import-button,
@@ -207,6 +197,7 @@ h1 {
 }
 
 #search-input:focus,
+.section-toggle:focus-visible,
 .filter-button:focus-visible,
 .info-link:focus-visible,
 .watch-card:focus-visible,
@@ -225,7 +216,12 @@ textarea:focus {
   display: grid;
   gap: 12px;
   width: min(100%, 720px);
-  margin: 6px auto 0;
+  margin: 0 auto;
+}
+
+.status-sections {
+  display: grid;
+  gap: 12px;
 }
 
 .section-block {
@@ -256,6 +252,14 @@ textarea:focus {
 .section-toggle span:last-child {
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.section-content {
+  padding: 10px;
+}
+
+.section-content[hidden] {
+  display: none;
 }
 
 .watch-list {
