@@ -9,7 +9,7 @@
     <link rel="manifest" href="icons/manifest.webmanifest">
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="icons/icon.svg">
-    <link rel="stylesheet" href="styles.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=9">
   </head>
   <body>
     <main class="app-shell" aria-labelledby="app-title">
@@ -43,6 +43,14 @@
           <button class="filter-button" type="button" data-filter="Serie">Serier</button>
           <button class="filter-button" type="button" data-filter="Film">Filmer</button>
           <button class="filter-button" type="button" data-filter="Miniserie">Miniserier</button>
+        </div>
+
+        <div class="filter-row rating-filter-row" role="group" aria-label="Filtrera efter betyg">
+          <button class="filter-button is-active" type="button" data-rating-filter="Alla">Alla</button>
+          <button class="filter-button" type="button" data-rating-filter="4">4 stj&#228;rnor</button>
+          <button class="filter-button" type="button" data-rating-filter="3">3 stj&#228;rnor</button>
+          <button class="filter-button" type="button" data-rating-filter="2">2 stj&#228;rnor</button>
+          <button class="filter-button" type="button" data-rating-filter="1">1 stj&#228;rna</button>
         </div>
 
         <label class="search-wrap">
@@ -125,6 +133,11 @@
           <input id="recommended-field" name="recommendedBy" type="text" autocomplete="off">
         </label>
 
+        <label class="field">
+          <span>Egen infol&#228;nk</span>
+          <input id="custom-info-url-field" name="customInfoUrl" type="text" inputmode="url" autocomplete="off" placeholder="https://">
+        </label>
+
         <div class="modal-actions">
           <button id="delete-button" class="delete-button" type="button" hidden>Delete title</button>
           <span></span>
@@ -134,6 +147,6 @@
       </form>
     </div>
 
-    <script src="script.js?v=7"></script>
+    <script src="script.js?v=8"></script>
   </body>
 </html>

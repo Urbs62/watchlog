@@ -20,6 +20,7 @@ const sampleTitles = [
 
 const state = {
   filter: "Alla",
+  ratingFilter: "Alla",
   query: "",
   editingId: null,
   collapsed: loadCollapsedState(),
@@ -39,7 +40,8 @@ const modalEl = document.querySelector("#title-modal");
 const formEl = document.querySelector("#title-form");
 const modalTitleEl = document.querySelector("#modal-title");
 const deleteButton = document.querySelector("#delete-button");
-const filterButtons = document.querySelectorAll(".filter-button");
+const typeFilterButtons = document.querySelectorAll("[data-filter]");
+const ratingFilterButtons = document.querySelectorAll("[data-rating-filter]");
 
 const fields = {
   title: document.querySelector("#title-field"),
@@ -49,6 +51,7 @@ const fields = {
   comment: document.querySelector("#comment-field"),
   status: document.querySelector("#status-field"),
   recommendedBy: document.querySelector("#recommended-field"),
+  customInfoUrl: document.querySelector("#custom-info-url-field"),
 };
 
 function loadInitialState() {
@@ -129,6 +132,7 @@ function toBackupTitle(item) {
     recommendedBy: item.recommendedBy,
     comment: item.comment,
     imdbUrl: item.imdbUrl,
+    customInfoUrl: item.customInfoUrl,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     manualOrder: item.manualOrder,
@@ -214,6 +218,7 @@ function createTitleRecord(data, manualOrder = 0, id = createId()) {
   const season = normalizeSeasonInput(data.season ?? data.detail ?? "");
   const rating = normalizeRatingValue(data.rating);
   const status = STATUSES.includes(data.status) ? data.status : STATUS_SEEN;
+  const customInfoUrl = normalizeCustomInfoUrl(data.customInfoUrl);
 
   return {
     id,
@@ -225,6 +230,7 @@ function createTitleRecord(data, manualOrder = 0, id = createId()) {
     recommendedBy: String(data.recommendedBy || "").trim(),
     comment: String(data.comment ?? data.notes ?? "").trim(),
     imdbUrl: buildInfoLink(title),
+    customInfoUrl,
     createdAt: data.createdAt || now,
     updatedAt: data.updatedAt || now,
     manualOrder: Number.isFinite(Number(data.manualOrder)) ? Number(data.manualOrder) : manualOrder,
@@ -282,11 +288,16 @@ function clearWatchList() {
 
 function resetControls() {
   state.filter = "Alla";
+  state.ratingFilter = "Alla";
   state.query = "";
   searchInput.value = "";
 
-  filterButtons.forEach((button) => {
+  typeFilterButtons.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.filter === "Alla");
+  });
+
+  ratingFilterButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.ratingFilter === "Alla");
   });
 }
 
@@ -315,6 +326,7 @@ function updateTitle(id, titleData) {
     recommendedBy: titleData.recommendedBy,
     comment: titleData.comment,
     imdbUrl: buildInfoLink(titleData.title),
+    customInfoUrl: normalizeCustomInfoUrl(titleData.customInfoUrl),
     updatedAt: new Date().toISOString(),
     manualOrder: statusChanged ? getNextTopOrder(titleData.status) : current.manualOrder,
   };
@@ -533,14 +545,35 @@ function normalizeRatingValue(value) {
   return Number.isFinite(numeric) ? numeric : parseRating(value);
 }
 
+function normalizeCustomInfoUrl(value) {
+  const url = String(value || "").trim();
+  return isValidCustomInfoUrl(url) ? url : "";
+}
+
+function isValidCustomInfoUrl(value) {
+  return value === "" || /^https?:\/\//i.test(value);
+}
+
 function renderStars(value) {
   if (value === null || value === undefined || value === "") return "";
 
   const rating = Math.max(0, Math.min(5, Number(value) || 0));
   const fullStars = Math.floor(rating);
   const hasHalf = rating % 1 >= 0.5;
+  const stars = [];
 
-  return `${"\u2605".repeat(fullStars)}${hasHalf ? "\u2606" : ""}`;
+  for (let index = 1; index <= 5; index += 1) {
+    const isFilled = index <= fullStars;
+    const isHalfStep = hasHalf && index === fullStars + 1;
+    const className = isFilled ? "star is-filled" : "star is-empty";
+    stars.push(`<span class="${className}" aria-hidden="true">${isFilled ? "\u2605" : "\u2606"}</span>`);
+
+    if (isHalfStep) {
+      stars[stars.length - 1] = `<span class="star is-empty is-half-step" aria-hidden="true">\u2606</span>`;
+    }
+  }
+
+  return stars.join("");
 }
 
 function buildInfoLink(title) {
@@ -559,9 +592,18 @@ function getVisibleTitles() {
 
   return state.titles.filter((item) => {
     const matchesFilter = state.filter === "Alla" || item.type === state.filter;
-    const searchText = `${item.title} ${item.type} ${item.season || ""} ${item.comment || ""} ${item.recommendedBy || ""}`.toLowerCase();
-    return matchesFilter && (!query || searchText.includes(query));
+    const matchesRatingFilter = matchesRatingGroup(item);
+    const searchText = `${item.title} ${item.type} ${item.season || ""} ${item.comment || ""} ${item.recommendedBy || ""} ${item.customInfoUrl || ""}`.toLowerCase();
+    return matchesFilter && matchesRatingFilter && (!query || searchText.includes(query));
   });
+}
+
+function matchesRatingGroup(item) {
+  if (state.ratingFilter === "Alla") return true;
+  if (item.rating === null || item.rating === undefined || item.rating === "") return false;
+
+  const ratingGroup = Math.floor(Number(item.rating));
+  return ratingGroup === Number(state.ratingFilter);
 }
 
 function getTitlesForStatus(status, titles = getVisibleTitles()) {
@@ -612,6 +654,8 @@ function renderCard(item) {
   const rating = item.rating === null || item.rating === undefined ? null : Number(item.rating);
   const stripColor = getRatingColor(rating);
   const ratingLabel = rating === null ? "Inget betyg" : `Betyg ${rating} av 5`;
+  const infoUrl = item.customInfoUrl || item.imdbUrl || buildInfoLink(item.title);
+  const infoLabel = item.customInfoUrl ? "Info \u2197" : "IMDb \u2197";
 
   return `
     <li>
@@ -623,7 +667,7 @@ function renderCard(item) {
           <p class="meta">${escapeHtml(meta || item.status)}</p>
           ${item.comment ? `<p class="notes">${escapeHtml(item.comment)}</p>` : ""}
           ${item.recommendedBy ? `<p class="recommended">${escapeHtml(`Tips: ${item.recommendedBy}`)}</p>` : ""}
-          <a class="info-link" href="${escapeHtml(item.imdbUrl || buildInfoLink(item.title))}" target="_blank" rel="noreferrer">IMDb \u2197</a>
+          <a class="info-link" href="${escapeHtml(infoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(infoLabel)}</a>
         </div>
       </article>
     </li>
@@ -655,6 +699,7 @@ function openEditModal(id) {
   fields.comment.value = item.comment || "";
   fields.status.value = item.status;
   fields.recommendedBy.value = item.recommendedBy || "";
+  fields.customInfoUrl.value = item.customInfoUrl || "";
   openModal();
 }
 
@@ -677,6 +722,7 @@ function getFormData() {
     comment: fields.comment.value.trim(),
     status: fields.status.value,
     recommendedBy: fields.recommendedBy.value.trim(),
+    customInfoUrl: fields.customInfoUrl.value.trim(),
   };
 }
 
@@ -694,11 +740,23 @@ function escapeHtml(value) {
   });
 }
 
-filterButtons.forEach((button) => {
+typeFilterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     state.filter = button.dataset.filter;
 
-    filterButtons.forEach((item) => {
+    typeFilterButtons.forEach((item) => {
+      item.classList.toggle("is-active", item === button);
+    });
+
+    renderList();
+  });
+});
+
+ratingFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.ratingFilter = button.dataset.ratingFilter;
+
+    ratingFilterButtons.forEach((item) => {
       item.classList.toggle("is-active", item === button);
     });
 
@@ -742,6 +800,12 @@ formEl.addEventListener("submit", (event) => {
   event.preventDefault();
   const data = getFormData();
   if (!data.title) return;
+
+  if (!isValidCustomInfoUrl(data.customInfoUrl)) {
+    fields.customInfoUrl.focus();
+    window.alert("Egen infol\u00e4nk m\u00e5ste b\u00f6rja med http:// eller https://.");
+    return;
+  }
 
   if (state.editingId) {
     updateTitle(state.editingId, data);

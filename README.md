@@ -48,6 +48,7 @@ Use the floating `+` button to add titles directly in the app. Cards can be tapp
 - comment
 - status
 - recommended by
+- custom info URL
 
 Titles are grouped into collapsible sections: `Sett`, `Tips`, and `Vill se`. Each section keeps its own manual order and never sorts alphabetically. New manual entries are placed at the top of their selected section, and changing a title's status moves it to the top of the new section.
 
@@ -55,7 +56,7 @@ Collapsed section state is saved in `localStorage`, so `Sett`, `Tips`, and `Vill
 
 Each saved title uses the future-proof model:
 
-`id`, `title`, `type`, `season`, `rating`, `status`, `recommendedBy`, `comment`, `imdbUrl`, `createdAt`, `updatedAt`, `manualOrder`.
+`id`, `title`, `type`, `season`, `rating`, `status`, `recommendedBy`, `comment`, `imdbUrl`, `customInfoUrl`, `createdAt`, `updatedAt`, `manualOrder`.
 
 ## JSON Backup
 
@@ -103,6 +104,6 @@ Supported source rating shorthand:
 | `5` | 5.0 |
 | `5+` | 5.0 |
 
-Half ratings are stored numerically but rendered with only filled and empty stars, for example `3.5` renders as `★★★☆`.
+Half ratings are stored numerically but rendered with only filled and empty gold stars.
 
 Open `index.html` directly in a browser, or serve the folder with any static file server.
